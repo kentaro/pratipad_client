@@ -107,12 +107,6 @@ defmodule Pratipad.Client do
          }}
       end
 
-      def start(opts \\ []) do
-        DynamicSupervisor.start_child(Pratipad.Client.Supervisor, {
-          Pratipad.Handler.Message
-        })
-      end
-
       def start_link(opts \\ []) do
         GenServer.start_link(__MODULE__, opts, name: __MODULE__)
       end
