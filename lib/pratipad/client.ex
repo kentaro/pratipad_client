@@ -18,60 +18,48 @@ defmodule Pratipad.Client do
   ```
   defmodule ExamplesClient do
     use Pratipad.Client
+    alias Pratipad.Client
 
-    @impl GenServer
-    def handle_cast(:pull_message, state) do
-      Logger.debug("received: :pull_message")
-      GenServer.cast(state.receiver, {:send_message, "I'm alive!"})
-
-      {:noreply, state}
+    @impl Client
+    def push_message(_opts) do
+      "message to be pushed"
     end
 
-    @impl GenServer
-    def handle_cast({:push_message, message}, state) do
-      GenServer.cast(state.receiver, {:push_message, message})
-      {:noreply, state}
+    @impl Client
+    def pull_message(_opts) do
+      "message to be pulled"
     end
 
-    def start(opts \\ []) do
-      [
-        {__MODULE__, opts}
-      ]
-      |> Supervisor.start_link(
-        strategy: :one_for_one,
-        name: ExamplesClient.Supervisor
-      )
-    end
-
-    def push_message(message) do
-      GenServer.cast(__MODULE__, {:push_message, message})
+    @impl Client
+    def backward_message(_opts) do
+      # do something along with the backward message
     end
   end
   ```
   """
 
-  defmacro __using__(opts) do
+  defmacro __using__(opts \\ []) do
     quote do
-      @behaviour Pratipad.Client
+      alias Pratipad.Client
 
       mode = unquote(opts[:mode]) || :push
-      backward_enabled = uncuote(opts[:backward_enbaled]) || false
+      backward_enabled = unquote(opts[:backward_enabled]) || false
 
       case mode do
-        :push -> @callback push_message(opts \\ []) :: term
-        :pull -> @callback pull_message(opts \\ []) :: term
+        :push -> @behaviour Client.Push
+        :pull -> @behaviour Client.Pull
         _ -> raise("Invalid `mode` option: #{mode}")
       end
 
       if backward_enabled do
-        @callback backward_message(opts \\ []) :: term
+        @behaviour Client.Backward
       end
 
       use GenServer
       require Logger
 
       @default_forwarder_name :pratipad_forwarder
-      @default_backwarer_name :pratipad_backwarder
+      @default_backwarder_name :pratipad_backwarder
       @default_max_retry_count 10
 
       @impl GenServer
@@ -111,29 +99,35 @@ defmodule Pratipad.Client do
         GenServer.start_link(__MODULE__, opts, name: __MODULE__)
       end
 
-      @impl GenServer
-      def handle_cast({:push_message, opts \\ []}, state) do
-        Logger.debug("received: :push_message")
-        message = push_message(opts)
+      if mode == :push do
+        @impl GenServer
+        def handle_cast({:push_message, opts}, state) do
+          Logger.debug("received: :push_message")
+          message = push_message(opts)
 
-        GenServer.cast(state.receivers.forwarder.pid, {:push_message, message})
-        {:noreply, state}
+          GenServer.cast(state.receivers.forwarder.pid, {:push_message, message})
+          {:noreply, state}
+        end
       end
 
-      @impl GenServer
-      def handle_cast({:pull_message, opts \\ []}, state) do
-        Logger.debug("received: :pull_message")
-        message = pull_message(opts)
+      if mode == :pull do
+        @impl GenServer
+        def handle_cast({:pull_message, opts}, state) do
+          Logger.debug("received: :pull_message")
+          message = pull_message(opts)
 
-        GenServer.cast(state.receivers.forwarder.pid, {:send_message, message})
-        {:noreply, state}
+          GenServer.cast(state.receivers.forwarder.pid, {:send_message, message})
+          {:noreply, state}
+        end
       end
 
-      @impl GenServer
-      def handle_cast({:backward_message, opts \\ []}, state) do
-        Logger.debug("received: :backward_message")
-        message = backward_message(opts)
-        {:noreply, state}
+      if backward_enabled do
+        @impl GenServer
+        def handle_cast({:backward_message, opts}, state) do
+          Logger.debug("received: :backward_message")
+          message = backward_message(opts)
+          {:noreply, state}
+        end
       end
 
       @impl GenServer
