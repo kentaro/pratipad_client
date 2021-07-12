@@ -1,3 +1,3 @@
 defmodule Pratipad.Client.Backward do
-  @callback backward_message(opts :: list) :: term
+  @callback backward_message(message :: any()) :: term
 end

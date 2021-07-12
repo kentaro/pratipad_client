@@ -3,12 +3,12 @@ defmodule Examples.Client.Push do
   alias Pratipad.Client
 
   @impl Client.Push
-  def push_message(_opts) do
+  def push_message() do
     "[push] Hi, it's #{DateTime.utc_now} now!"
   end
 
   @impl Client.Backward
-  def backward_message(_opts) do
-    Logger.info("got :backward_message")
+  def backward_message(message) do
+    Logger.info("backward_message: #{inspect(message)}")
   end
 end

@@ -58,8 +58,8 @@ defmodule Pratipad.Client do
       use GenServer
       require Logger
 
-      @default_forwarder_name :pratipad_forwarder
-      @default_backwarder_name :pratipad_backwarder
+      @default_forwarder_name :pratipad_receiver_forwarder
+      @default_backwarder_name :pratipad_receiver_backwarder
       @default_max_retry_count 10
 
       @impl GenServer
@@ -101,9 +101,9 @@ defmodule Pratipad.Client do
 
       if mode == :push do
         @impl GenServer
-        def handle_cast({:push_message, opts}, state) do
+        def handle_cast(:push_message, state) do
           Logger.debug("received: :push_message")
-          message = push_message(opts)
+          message = push_message()
 
           GenServer.cast(state.receivers.forwarder.pid, {:push_message, message})
           {:noreply, state}
@@ -112,9 +112,9 @@ defmodule Pratipad.Client do
 
       if mode == :pull do
         @impl GenServer
-        def handle_cast({:pull_message, opts}, state) do
+        def handle_cast(:pull_message, state) do
           Logger.debug("received: :pull_message")
-          message = pull_message(opts)
+          message = pull_message()
 
           GenServer.cast(state.receivers.forwarder.pid, {:send_message, message})
           {:noreply, state}
@@ -123,9 +123,9 @@ defmodule Pratipad.Client do
 
       if backward_enabled do
         @impl GenServer
-        def handle_cast({:backward_message, opts}, state) do
+        def handle_cast({:backward_message, message}, state) do
           Logger.debug("received: :backward_message")
-          message = backward_message(opts)
+          message = backward_message(message)
           {:noreply, state}
         end
       end
