@@ -53,13 +53,14 @@ defmodule Pratipad.Client do
 
       if backward_enabled do
         @behaviour Client.Backward
+        @backward_enabled true
       end
 
       use GenServer
       require Logger
 
-      @default_forwarder_name :pratipad_receiver_forwarder
-      @default_backwarder_name :pratipad_receiver_backwarder
+      @default_forwarder_name :pratipad_forwarder_input
+      @default_backwarder_name :pratipad_backwarder_output
       @default_max_retry_count 10
 
       @impl GenServer
@@ -67,12 +68,11 @@ defmodule Pratipad.Client do
         forwarder_name = opts[:forwarder_name] || @default_forwarder_name
         backwarder_name = opts[:backwarder_name] || @default_backwarder_name
         max_retry_count = opts[:max_retry_count] || @default_max_retry_count
-        bidirectional = !!opts[:bidirectional]
 
         forwarder = connect_to_receiver(forwarder_name, max_retry_count)
 
         backwarder =
-          if bidirectional do
+          if @backward_enabled do
             connect_to_receiver(backwarder_name, max_retry_count)
           else
             nil
@@ -90,8 +90,7 @@ defmodule Pratipad.Client do
                name: backwarder_name,
                pid: backwarder
              }
-           },
-           bidirectional: bidirectional
+           }
          }}
       end
 
