@@ -150,7 +150,7 @@ defmodule Pratipad.Client do
       end
 
       defp connect_to_receiver(receiver_name, retry_count) do
-        receiver = try_connect_to_receiver(receiver_name, retry_count)
+        receiver = try_connect_to_receiver_with_retry_count(receiver_name, retry_count)
 
         GenServer.call(receiver, :register)
         Logger.info("Register this client to #{inspect(receiver)}")
@@ -161,21 +161,39 @@ defmodule Pratipad.Client do
         receiver
       end
 
-      defp try_connect_to_receiver(receiver_name, retry_count) do
-        if retry_count > 0 do
-          :global.sync()
-          receiver = :global.whereis_name(receiver_name)
+      defp try_connect_to_receiver_with_retry_count(receiver_name, :infinity) do
+        receiver = try_connect_to_receiver(receiver_name)
 
-          if receiver == :undefined do
-            Logger.debug("Waiting for the receiver is up.")
-            Process.sleep(500)
-            try_connect_to_receiver(receiver_name, retry_count - 1)
-          else
-            receiver
-          end
+        if receiver == :undefined do
+          Logger.debug("Waiting for the receiver is up.")
+          Process.sleep(500)
+          try_connect_to_receiver_with_retry_count(receiver_name, :infinity)
         else
-          raise("Couldn't connect to #{receiver_name}")
+          receiver
         end
+      end
+
+      defp try_connect_to_receiver_with_retry_count(receiver_name, retry_count)
+           when retry_count >= 0 do
+        receiver =
+          if retry_count > 0 do
+            receiver = try_connect_to_receiver(receiver_name)
+          else
+           raise("Couldn't connect to #{receiver_name}")
+          end
+
+        if receiver == :undefined do
+          Logger.debug("Waiting for the receiver is up.")
+          Process.sleep(500)
+          try_connect_to_receiver_with_retry_count(receiver_name, retry_count - 1)
+        else
+          receiver
+        end
+      end
+
+      defp try_connect_to_receiver(receiver_name) do
+        :global.sync()
+        :global.whereis_name(receiver_name)
       end
     end
   end
