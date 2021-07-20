@@ -133,15 +133,21 @@ defmodule Pratipad.Client do
       def handle_info({:DOWN, _, _, pid, reason}, state) do
         Logger.error("Server is down: #{reason}")
 
-        anormal_receiver =
+        {receiver_type, anormal_receiver} =
           case state.receivers do
-            %{forwarder: %{pid: ^pid}} -> state.receivers.forwarder
-            %{backwarder: %{pid: ^pid}} -> state.receivers.backwarder
+            %{forwarder: %{pid: ^pid}} -> {:forwarder, state.receivers.forwarder}
+            %{backwarder: %{pid: ^pid}} -> {:backwarder, state.receivers.backwarder}
           end
 
         receiver = connect_to_receiver(anormal_receiver.name, state.max_retry_count)
 
-        {:noreply, %{state | receiver: receiver}}
+        receivers =
+          Map.put(state.receivers, receiver_type, %{
+            name: anormal_receiver.name,
+            pid: receiver
+          })
+
+        {:noreply, %{state | receivers: receivers}}
       end
 
       @impl GenServer
@@ -179,7 +185,7 @@ defmodule Pratipad.Client do
           if retry_count > 0 do
             receiver = try_connect_to_receiver(receiver_name)
           else
-           raise("Couldn't connect to #{receiver_name}")
+            raise("Couldn't connect to #{receiver_name}")
           end
 
         if receiver == :undefined do
