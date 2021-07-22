@@ -40,24 +40,22 @@ defmodule Pratipad.Client do
 
   defmacro __using__(opts \\ []) do
     quote do
-      alias Pratipad.Client.{Push, Demand, Pull}
-
       mode = unquote(opts[:mode]) || :push
 
       case mode do
-        :push -> @behaviour Push
-        :demand -> @behaviour Demand
-        :pull -> @behaviour Pull
+        :push -> @behaviour Pratipad.Client.Push
+        :demand -> @behaviour Pratipad.Client.Demand
+        :pull -> @behaviour Pratipad.Client.Pull
         _ -> raise("Invalid `mode` option: #{mode}")
       end
 
       # `pull` mode always needs backwarder enabled to pull request from a server
-      backward_enabled = mode == :pull || unquote(opts[:backward_enabled])
+      backward_enabled = unquote(opts[:backward_enabled]) || mode == :pull
 
       @backward_enabled backward_enabled
 
       if backward_enabled do
-        @behaviour Client.Backward
+        @behaviour Pratipad.Client.Backward
       end
 
       use GenServer
