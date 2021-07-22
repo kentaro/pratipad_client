@@ -95,7 +95,8 @@ defmodule Pratipad.Client do
       end
 
       def start_link(opts \\ []) do
-        GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+        name = opts[:name] || raise("opts[:name] is mandatory")
+        GenServer.start_link(__MODULE__, opts, name: name)
       end
 
       if mode == :push do
@@ -130,8 +131,8 @@ defmodule Pratipad.Client do
       end
 
       @impl GenServer
-      def handle_info({:DOWN, _, _, pid, reason}, state) do
-        Logger.error("Server is down: #{reason}")
+      def handle_info({:DOWN, ref, _, pid, reason}, state) do
+        Logger.error("Server down (#{inspect(reason)}): ref (#{inspect(ref)}), pid (#{inspect(pid)})")
 
         {receiver_type, anormal_receiver} =
           case state.receivers do
