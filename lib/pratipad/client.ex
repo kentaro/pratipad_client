@@ -40,20 +40,24 @@ defmodule Pratipad.Client do
 
   defmacro __using__(opts \\ []) do
     quote do
-      alias Pratipad.Client
+      alias Pratipad.Client.{Push, Demand, Pull}
 
       mode = unquote(opts[:mode]) || :push
-      backward_enabled = unquote(opts[:backward_enabled]) || false
 
       case mode do
-        :push -> @behaviour Client.Push
-        :pull -> @behaviour Client.Pull
+        :push -> @behaviour Push
+        :demand -> @behaviour Demand
+        :pull -> @behaviour Pull
         _ -> raise("Invalid `mode` option: #{mode}")
       end
 
+      # `pull` mode always needs backwarder enabled to pull request from a server
+      backward_enabled = mode == :pull || unquote(opts[:backward_enabled])
+
+      @backward_enabled backward_enabled
+
       if backward_enabled do
         @behaviour Client.Backward
-        @backward_enabled true
       end
 
       use GenServer
@@ -99,7 +103,7 @@ defmodule Pratipad.Client do
         GenServer.start_link(__MODULE__, opts, name: name)
       end
 
-      if mode == :push do
+      if mode == :push || mode == :pull do
         @impl GenServer
         def handle_cast(:push_message, state) do
           Logger.debug("received: :push_message")
@@ -110,7 +114,7 @@ defmodule Pratipad.Client do
         end
       end
 
-      if mode == :pull do
+      if mode == :demand do
         @impl GenServer
         def handle_cast(:pull_message, state) do
           Logger.debug("received: :pull_message")
@@ -132,7 +136,9 @@ defmodule Pratipad.Client do
 
       @impl GenServer
       def handle_info({:DOWN, ref, _, pid, reason}, state) do
-        Logger.error("Server down (#{inspect(reason)}): ref (#{inspect(ref)}), pid (#{inspect(pid)})")
+        Logger.error(
+          "Server down (#{inspect(reason)}): ref (#{inspect(ref)}), pid (#{inspect(pid)})"
+        )
 
         {receiver_type, anormal_receiver} =
           case state.receivers do

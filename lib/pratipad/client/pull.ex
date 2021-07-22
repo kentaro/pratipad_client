@@ -1,3 +1,3 @@
 defmodule Pratipad.Client.Pull do
-  @callback pull_message() :: term
+  @callback push_message() :: term
 end
