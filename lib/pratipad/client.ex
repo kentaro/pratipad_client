@@ -13,7 +13,7 @@ defmodule Pratipad.Client do
   regardless of whether the Broadway producer has demand or not.
 
   If the settings defined for Pratipad supports bidirectional dataflow,
-  it sends `:backward_message` message to the client via the receiver.
+  it sends `:forward_message` message to the client via the receiver.
 
   ```
   defmodule ExamplesClient do
@@ -31,7 +31,7 @@ defmodule Pratipad.Client do
     end
 
     @impl Client
-    def backward_message(_opts) do
+    def forward_message(_opts) do
       # do something along with the backward message
     end
   end
@@ -125,9 +125,9 @@ defmodule Pratipad.Client do
 
       if backward_enabled do
         @impl GenServer
-        def handle_cast({:backward_message, message}, state) do
-          Logger.debug("received: :backward_message")
-          message = backward_message(message)
+        def handle_cast({:forward_message, message}, state) do
+          Logger.debug("received: :forward_message")
+          message = forward_message(message)
           {:noreply, state}
         end
       end
