@@ -164,7 +164,7 @@ defmodule Pratipad.Client do
       def handle_cast(:ready, state) do
         Logger.debug("received: :ready")
 
-        forwarder = connect_to_receiver(state.receivers.forwarder.name, max_retry_count)
+        forwarder = connect_to_receiver(state.receivers.forwarder.name, 1)
 
         receivers =
           Map.put(state.receivers, :forwarder, %{
