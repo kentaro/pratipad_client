@@ -73,7 +73,10 @@ defmodule Pratipad.Client do
         max_retry_count = opts[:max_retry_count] || @default_max_retry_count
         connection_mode = opts[:connection_mode] || @default_connection_mode
 
-        forwarder = connect_to_receiver(forwarder_name, max_retry_count)
+        forwarder =
+          if connection_mode == :client do
+            connect_to_receiver(forwarder_name, max_retry_count)
+          end
 
         backwarder =
           if @backward_enabled && connection_mode == :client do
@@ -109,7 +112,7 @@ defmodule Pratipad.Client do
           Logger.debug("received: :push_message")
           message = push_message()
 
-          GenServer.cast(state.receivers.forwarder.pid, {:push_message, message})
+          GenServer.cast(state.receivers.forwarder.name, {:push_message, message})
           {:noreply, state}
         end
       end
@@ -120,7 +123,7 @@ defmodule Pratipad.Client do
           Logger.debug("received: :pull_message")
           message = pull_message()
 
-          GenServer.cast(state.receivers.forwarder.pid, {:send_message, message})
+          GenServer.cast(state.receivers.forwarder.name, {:send_message, message})
           {:noreply, state}
         end
       end
@@ -155,6 +158,21 @@ defmodule Pratipad.Client do
           })
 
         {:noreply, %{state | receivers: receivers}}
+      end
+
+      @impl GenServer
+      def handle_cast(:ready, state) do
+        Logger.debug("received: :ready")
+
+        forwarder = connect_to_receiver(state.receivers.forwarder.name, max_retry_count)
+
+        receivers =
+          Map.put(state.receivers, :forwarder, %{
+            name: state.receivers.forwarder.name,
+            pid: forwarder
+          })
+
+        {:reply, %{state | receivers: receivers}}
       end
 
       @impl GenServer
