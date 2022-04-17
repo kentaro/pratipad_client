@@ -64,17 +64,19 @@ defmodule Pratipad.Client do
       @default_forwarder_name :pratipad_forwarder_input
       @default_backwarder_name :pratipad_backwarder_output
       @default_max_retry_count 10
+      @default_connection_mode :client
 
       @impl GenServer
       def init(opts \\ []) do
         forwarder_name = opts[:forwarder_name] || @default_forwarder_name
         backwarder_name = opts[:backwarder_name] || @default_backwarder_name
         max_retry_count = opts[:max_retry_count] || @default_max_retry_count
+        connection_mode = opts[:connection_mode] || @default_connection_mode
 
         forwarder = connect_to_receiver(forwarder_name, max_retry_count)
 
         backwarder =
-          if @backward_enabled do
+          if @backward_enabled && connection_mode == :client do
             connect_to_receiver(backwarder_name, max_retry_count)
           else
             nil
