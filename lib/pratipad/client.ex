@@ -73,6 +73,11 @@ defmodule Pratipad.Client do
         max_retry_count = opts[:max_retry_count] || @default_max_retry_count
         connection_mode = opts[:connection_mode] || @default_connection_mode
 
+        # Register myself if the mode is not client == server
+        if connection_mode != :client do
+          :global.register_name(opts[:name], self())
+        end
+
         forwarder =
           if connection_mode == :client do
             connect_to_receiver(forwarder_name, max_retry_count)
