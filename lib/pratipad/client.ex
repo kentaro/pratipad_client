@@ -164,12 +164,12 @@ defmodule Pratipad.Client do
       def handle_cast(:ready, state) do
         Logger.debug("received: :ready")
 
-        forwarder = connect_to_receiver(state.receivers.forwarder.name, 1)
+        forwarder = connect_to_receiver(state.receivers.backwarder.name, 1)
 
         receivers =
-          Map.put(state.receivers, :forwarder, %{
-            name: state.receivers.forwarder.name,
-            pid: forwarder
+          Map.put(state.receivers, :backwarder, %{
+            name: state.receivers.backwarder.name,
+            pid: backwarder
           })
 
         {:reply, %{state | receivers: receivers}}
