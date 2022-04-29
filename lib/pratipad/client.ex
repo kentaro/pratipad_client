@@ -73,8 +73,7 @@ defmodule Pratipad.Client do
         max_retry_count = opts[:max_retry_count] || @default_max_retry_count
         connection_mode = opts[:connection_mode] || @default_connection_mode
 
-        # Register myself if the mode is not client == server
-        if connection_mode != :client do
+        if connection_mode == :server do
           :global.register_name(opts[:name], self())
         end
 
@@ -177,7 +176,7 @@ defmodule Pratipad.Client do
             pid: backwarder
           })
 
-        {:reply, %{state | receivers: receivers}}
+        {:noreply, %{state | receivers: receivers}}
       end
 
       @impl GenServer
