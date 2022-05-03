@@ -116,7 +116,7 @@ defmodule Pratipad.Client do
           Logger.debug("received: :push_message")
           message = push_message()
 
-          GenServer.cast(state.receivers.forwarder.name, {:push_message, message})
+          GenServer.cast(state.receivers.forwarder.pid, {:push_message, message})
           {:noreply, state}
         end
       end
@@ -127,7 +127,7 @@ defmodule Pratipad.Client do
           Logger.debug("received: :pull_message")
           message = pull_message()
 
-          GenServer.cast(state.receivers.forwarder.name, {:send_message, message})
+          GenServer.cast(state.receivers.forwarder.pid, {:send_message, message})
           {:noreply, state}
         end
       end
