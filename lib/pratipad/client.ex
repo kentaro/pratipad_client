@@ -227,7 +227,7 @@ defmodule Pratipad.Client do
       end
 
       defp try_connect_to_receiver(receiver_name) do
-        :global.sync()
+        # :global.sync()
         :global.whereis_name(receiver_name)
       end
     end
